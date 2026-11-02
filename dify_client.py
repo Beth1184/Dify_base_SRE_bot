@@ -7,11 +7,21 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+# DeepSeek R1 等推理模型会把 <think>...</think> 思考过程混入 answer，需要剥离
+_REASONING_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+
+
+def _clean_answer(answer: str) -> str:
+    answer = _REASONING_RE.sub("", answer)
+    answer = answer.replace("<!--dify-deepseek-reasoning-->", "")
+    return answer.strip()
 
 
 @dataclass
@@ -61,8 +71,9 @@ class DifyClient:
             logger.error("Dify API 返回内容解析失败: %s", exc)
             return DifyReply(error="知识库返回内容解析失败")
 
-        answer = data.get("answer") or ""
+        raw_answer = data.get("answer") or ""
         conv_id = data.get("conversation_id") or ""
+        answer = _clean_answer(raw_answer)
         if not answer:
             return DifyReply(conversation_id=conv_id, error="未找到相关信息")
 

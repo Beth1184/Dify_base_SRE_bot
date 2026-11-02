@@ -141,15 +141,8 @@ class FeishuClient:
                 "elements": [
                     {"tag": "markdown", "content": answer},
                     {"tag": "hr"},
-                    {
-                        "tag": "note",
-                        "elements": [
-                            {
-                                "tag": "plain_text",
-                                "content": note or "📖 回答基于 SRE 运维知识库",
-                            }
-                        ],
-                    },
+                    # 卡片 2.0 已移除 note 组件，底部注释改用 markdown
+                    {"tag": "markdown", "content": note or "📖 回答基于 SRE 运维知识库"},
                 ]
             },
         }
@@ -177,6 +170,11 @@ def do_p2_im_message_receive_v1(data: P2ImMessageReceiveV1) -> None:
     try:
         event = data.event
         message = event.message
+
+        logger.info(
+            "收到飞书事件 message_type=%s message_id=%s chat_id=%s",
+            message.message_type, message.message_id, message.chat_id,
+        )
 
         # 只处理文本消息
         if message.message_type != "text":
